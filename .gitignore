@@ -4,3 +4,7 @@ tasks.json
 .idea/
 venv/
 .env
+*.spec
+*.ico
+dist/
+build/
