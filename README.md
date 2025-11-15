@@ -12,9 +12,9 @@ Una aplicación de gestión de tareas con GUI usando **tkinter**.
 - Python 3.6+
 
 ## Uso
-\`\`\`bash
+```
 python main.py
-\`\`\`
+```
 
 ## Captura de pantalla
 ![App Screenshot](screenshot.png)
