@@ -26,3 +26,7 @@ python main.py
 ### Modo oscuro
 
 ![App Screenshot Dark mode](screenshot-dark.png)
+
+
+## Licencia
+Este proyecto está bajo la licencia **MIT** - ver archivo [LICENSE](LICENSE) para detalles.
