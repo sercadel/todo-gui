@@ -19,8 +19,10 @@ python main.py
 ```
 
 ## Captura de pantalla
-Modo claro
+### Modo claro
+
 ![App Screenshot Light mode](screenshot-light.png)
 
-Modo oscuro
+### Modo oscuro
+
 ![App Screenshot Dark mode](screenshot-dark.png)
