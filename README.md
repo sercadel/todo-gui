@@ -7,6 +7,8 @@ Una aplicación de gestión de tareas con GUI usando **tkinter**.
 - Marcar como completadas
 - Eliminar tareas
 - Persistencia en `tasks.json`
+- Selección de tema Claro/Oscuro
+- Editar tareas con doble clic
 
 ## Requisitos
 - Python 3.6+
@@ -17,4 +19,8 @@ python main.py
 ```
 
 ## Captura de pantalla
-![App Screenshot](screenshot.png)
+Modo claro
+![App Screenshot Light mode](screenshot-light.png)
+
+Modo oscuro
+![App Screenshot Dark mode](screenshot-dark.png)
