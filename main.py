@@ -5,35 +5,29 @@ import json
 import os
 from typing import List, Dict
 
+# --- DPI Awareness ---
+import ctypes
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(1)
+except:
+    pass
+
 TASKS_FILE = "tasks.json"
 
 # --- Temas ---
 THEMES = {
     "light": {
-        "bg": "#f0f0f0",
-        "fg": "#000000",
-        "entry_bg": "#ffffff",
-        "btn_add": "#4CAF50",
-        "btn_done": "#2196F3",
-        "btn_del": "#f44336",
-        "list_bg": "#ffffff",
-        "list_fg": "#000000",
-        "list_select": "#bde0fe"
+        "bg": "#f0f0f0", "fg": "#000000", "entry_bg": "#ffffff",
+        "btn_add": "#4CAF50", "btn_done": "#2196F3", "btn_del": "#f44336",
+        "text_bg": "#ffffff", "text_fg": "#000000", "text_select": "#bde0fe"
     },
     "dark": {
-        "bg": "#2b2b2b",
-        "fg": "#ffffff",
-        "entry_bg": "#3c3f41",
-        "btn_add": "#66bb6a",
-        "btn_done": "#42a5f5",
-        "btn_del": "#ef5350",
-        "list_bg": "#3c3f41",
-        "list_fg": "#ffffff",
-        "list_select": "#37474f"
+        "bg": "#2b2b2b", "fg": "#ffffff", "entry_bg": "#3c3f41",
+        "btn_add": "#66bb6a", "btn_done": "#42a5f5", "btn_del": "#ef5350",
+        "text_bg": "#3c3f41", "text_fg": "#ffffff", "text_select": "#37474f"
     }
 }
 
-# --- Cargar/Guardar ---
 def load_tasks() -> List[Dict]:
     if os.path.exists(TASKS_FILE):
         try:
@@ -52,92 +46,100 @@ class TodoApp:
     def __init__(self, root):
         self.root = root
         self.root.title("To-Do App")
-        self.root.geometry("520x680")
+
+        # Icono
+        icon_path = "app.ico"
+        if os.path.exists(icon_path):
+            self.root.iconbitmap(icon_path)
+
+        # Ventana
+        width, height = 600, 700
+        x = (self.root.winfo_screenwidth() - width) // 2
+        y = (self.root.winfo_screenheight() - height) // 2
+        self.root.geometry(f"{width}x{height}+{x}+{y}")
         self.root.resizable(False, False)
+
         self.tasks = load_tasks()
         self.current_theme = "light"
         self.setup_ui()
+        self.apply_theme()  # ← Después de crear todos los widgets
         self.refresh_list()
 
     def setup_ui(self):
-        # === Crear widgets ===
+        self.root.grid_rowconfigure(3, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
+
+        # Título
         self.title_lbl = tk.Label(self.root, text="Mis Tareas", font=("Helvetica", 18, "bold"))
-        self.title_lbl.pack(pady=12)
+        self.title_lbl.grid(row=0, column=0, pady=12, sticky="ew")
 
-        # Entrada + botones
-        top_frame = tk.Frame(self.root)
-        top_frame.pack(pady=8, fill=tk.X, padx=20)
-        self.top_frame = top_frame
+        # Entrada
+        self.top_frame = tk.Frame(self.root)  # ← CREAR ANTES
+        self.top_frame.grid(row=1, column=0, padx=20, pady=8, sticky="ew")
+        self.top_frame.grid_columnconfigure(0, weight=1)
 
-        self.entry = tk.Entry(top_frame, font=("Helvetica", 12))
-        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+        self.entry = tk.Entry(self.top_frame, font=("Helvetica", 12))
+        self.entry.grid(row=0, column=0, sticky="ew", padx=(0, 8))
         self.entry.bind("<Return>", lambda e: self.add_task())
 
-        self.add_btn = tk.Button(top_frame, text="Añadir", command=self.add_task, width=10)
-        self.add_btn.pack(side=tk.LEFT, padx=(0, 8))
+        self.add_btn = tk.Button(self.top_frame, text="Añadir", command=self.add_task, width=10)
+        self.add_btn.grid(row=0, column=1, padx=(0, 8))
 
-        self.theme_btn = tk.Button(top_frame, text="Dark", command=self.toggle_theme, width=8)
-        self.theme_btn.pack(side=tk.RIGHT)
+        self.theme_btn = tk.Button(self.top_frame, text="Dark", command=self.toggle_theme, width=8)
+        self.theme_btn.grid(row=0, column=2)
 
-        # Lista
-        list_frame = tk.Frame(self.root)
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        self.list_frame = list_frame
+        # Text + Scroll
+        text_frame = tk.Frame(self.root)
+        text_frame.grid(row=3, column=0, padx=20, pady=(5, 5), sticky="nsew")
+        text_frame.grid_rowconfigure(0, weight=1)
+        text_frame.grid_columnconfigure(0, weight=1)
 
-        self.listbox = tk.Listbox(
-            list_frame,
+        self.text = tk.Text(
+            text_frame,
             font=("Consolas", 11),
-            selectmode=tk.SINGLE,
-            activestyle="none",
-            height=20
+            wrap="none",
+            state="disabled",
+            spacing1=2,
+            spacing3=2
         )
-        self.listbox.pack(fill=tk.BOTH, expand=True)
-        self.listbox.bind("<Double-1>", self.edit_task)
+        self.text.grid(row=0, column=0, sticky="nsew")
 
-        # Botones acción
-        btn_frame = tk.Frame(self.root)
-        btn_frame.pack(pady=10)
-        self.btn_frame = btn_frame
+        v_scroll = tk.Scrollbar(text_frame, orient="vertical", command=self.text.yview)
+        v_scroll.grid(row=0, column=1, sticky="ns")
+        self.text.configure(yscrollcommand=v_scroll.set)
 
-        self.done_btn = tk.Button(btn_frame, text="Completar", command=self.mark_done, width=12)
-        self.done_btn.pack(side=tk.LEFT, padx=8)
+        h_scroll = tk.Scrollbar(self.root, orient="horizontal", command=self.text.xview)
+        h_scroll.grid(row=4, column=0, sticky="ew", padx=20, pady=(0, 5))
+        self.text.configure(xscrollcommand=h_scroll.set)
 
-        self.del_btn = tk.Button(btn_frame, text="Eliminar", command=self.delete_task, width=12)
-        self.del_btn.pack(side=tk.LEFT, padx=8)
+        self.text.bind("<Double-1>", self.edit_task)
+
+        # Botones
+        self.btn_frame = tk.Frame(self.root)
+        self.btn_frame.grid(row=5, column=0, pady=5, sticky="ew")
+        self.btn_frame.grid_columnconfigure(0, weight=1)
+        self.btn_frame.grid_columnconfigure(1, weight=1)
+
+        self.done_btn = tk.Button(self.btn_frame, text="Completar", command=self.mark_done, width=12)
+        self.done_btn.grid(row=0, column=0, padx=8, sticky="e")
+
+        self.del_btn = tk.Button(self.btn_frame, text="Eliminar", command=self.delete_task, width=12)
+        self.del_btn.grid(row=0, column=1, padx=8, sticky="w")
 
         # Footer
         self.footer = tk.Label(self.root, text="Doble clic para editar", font=("Helvetica", 8))
-        self.footer.pack(side=tk.BOTTOM, pady=10)
-
-        # Aplicar tema
-        self.apply_theme()
+        self.footer.grid(row=6, column=0, pady=10, sticky="ew")
 
     def apply_theme(self):
         theme = THEMES[self.current_theme]
         self.root.configure(bg=theme["bg"])
-
-        # Aplicar a TODOS los contenedores
-        for frame in [self.top_frame, self.list_frame, self.btn_frame]:
-            frame.configure(bg=theme["bg"])
-
-        for widget in [self.title_lbl, self.footer]:
-            widget.configure(bg=theme["bg"], fg=theme["fg"])
-
-        self.entry.configure(
-            bg=theme["entry_bg"],
-            fg=theme["fg"],
-            insertbackground=theme["fg"]
-        )
-
+        for widget in [self.title_lbl, self.footer, self.top_frame, self.text.master, self.btn_frame]:
+            widget.configure(bg=theme["bg"])
+        self.entry.configure(bg=theme["entry_bg"], fg=theme["fg"], insertbackground=theme["fg"])
         self.add_btn.configure(bg=theme["btn_add"], fg="white")
         self.done_btn.configure(bg=theme["btn_done"], fg="white")
         self.del_btn.configure(bg=theme["btn_del"], fg="white")
-
-        self.listbox.configure(
-            bg=theme["list_bg"],
-            fg=theme["list_fg"],
-            selectbackground=theme["list_select"]
-        )
+        self.text.configure(bg=theme["text_bg"], fg=theme["text_fg"], selectbackground=theme["text_select"])
 
     def toggle_theme(self):
         self.current_theme = "dark" if self.current_theme == "light" else "light"
@@ -150,64 +152,59 @@ class TodoApp:
         if not desc:
             messagebox.showwarning("Error", "Escribe una tarea.")
             return
-        task = {"id": len(self.tasks) + 1, "description": desc, "done": False}
-        self.tasks.append(task)
+        self.tasks.append({"id": len(self.tasks) + 1, "description": desc, "done": False})
         save_tasks(self.tasks)
         self.entry.delete(0, tk.END)
         self.refresh_list()
 
     def refresh_list(self):
-        self.listbox.delete(0, tk.END)
+        self.text.configure(state="normal")
+        self.text.delete("1.0", tk.END)
         for t in self.tasks:
             status = "Done" if t["done"] else "Pending"
-            text = f"{status} {t['id']}. {t['description']}"
-            self.listbox.insert(tk.END, text)
+            line = f"{status} {t['id']}. {t['description']}\n"
+            start = self.text.index(tk.END)
+            self.text.insert(tk.END, line)
             if t["done"]:
-                color = "#888888" if self.current_theme == "light" else "#bbbbbb"
-                self.listbox.itemconfig(tk.END, fg=color)
+                self.text.tag_add("done", start, self.text.index(tk.END))
+        self.text.tag_config("done", foreground="#888888" if self.current_theme == "light" else "#bbbbbb")
+        self.text.configure(state="disabled")
+        self.text.see("end")
 
-    def get_selected_id(self):
-        sel = self.listbox.curselection()
-        if not sel:
-            messagebox.showwarning("Error", "Selecciona una tarea.")
-            return None
-        line = self.listbox.get(sel[0])
+    def get_selected_task_id(self):
         try:
+            line = self.text.get("current linestart", "current lineend")
             return int(line.split(".")[0].split()[-1])
         except:
+            messagebox.showwarning("Error", "Selecciona una tarea.")
             return None
 
     def mark_done(self):
-        task_id = self.get_selected_id()
-        if not task_id: return
-        for t in self.tasks:
-            if t["id"] == task_id:
-                t["done"] = True
-                break
-        save_tasks(self.tasks)
-        self.refresh_list()
+        if (tid := self.get_selected_task_id()):
+            for t in self.tasks:
+                if t["id"] == tid:
+                    t["done"] = True
+                    break
+            save_tasks(self.tasks)
+            self.refresh_list()
 
     def delete_task(self):
-        task_id = self.get_selected_id()
-        if not task_id: return
-        if messagebox.askyesno("Confirmar", "¿Eliminar esta tarea?"):
-            self.tasks = [t for t in self.tasks if t["id"] != task_id]
+        if (tid := self.get_selected_task_id()) and messagebox.askyesno("Confirmar", "¿Eliminar?"):
+            self.tasks = [t for t in self.tasks if t["id"] != tid]
             for i, t in enumerate(self.tasks, 1):
                 t["id"] = i
             save_tasks(self.tasks)
             self.refresh_list()
 
     def edit_task(self, event):
-        task_id = self.get_selected_id()
-        if not task_id: return
-        for t in self.tasks:
-            if t["id"] == task_id:
-                new_desc = simpledialog.askstring("Editar tarea", "Nueva descripción:", initialvalue=t["description"])
-                if new_desc and new_desc.strip():
-                    t["description"] = new_desc.strip()
-                    save_tasks(self.tasks)
-                    self.refresh_list()
-                break
+        if (tid := self.get_selected_task_id()):
+            for t in self.tasks:
+                if t["id"] == tid:
+                    if (new := simpledialog.askstring("Editar", "Nueva descripción:", initialvalue=t["description"])) and new.strip():
+                        t["description"] = new.strip()
+                        save_tasks(self.tasks)
+                        self.refresh_list()
+                    break
 
 # --- Ejecutar ---
 if __name__ == "__main__":
