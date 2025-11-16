@@ -47,10 +47,15 @@ class TodoApp:
         self.root = root
         self.root.title("To-Do App")
 
-        # Icono
-        icon_path = "app.ico"
+        # Icono (ruta absoluta + fallback)
+        icon_path = os.path.join(os.path.dirname(__file__), "app.ico")
         if os.path.exists(icon_path):
-            self.root.iconbitmap(icon_path)
+            try:
+                self.root.iconbitmap(icon_path)
+            except Exception as e:
+                print(f"Error cargando icono: {e}")
+        else:
+            print("app.ico no encontrado en:", icon_path)
 
         # Ventana
         width, height = 600, 700
@@ -133,13 +138,31 @@ class TodoApp:
     def apply_theme(self):
         theme = THEMES[self.current_theme]
         self.root.configure(bg=theme["bg"])
-        for widget in [self.title_lbl, self.footer, self.top_frame, self.text.master, self.btn_frame]:
+
+        # Aplicar fondo a frames
+        for widget in [self.top_frame, self.text.master, self.btn_frame]:
             widget.configure(bg=theme["bg"])
+
+        # Título y footer: fondo + texto
+        self.title_lbl.configure(bg=theme["bg"], fg=theme["fg"])
+        self.footer.configure(bg=theme["bg"], fg=theme["fg"])
+
+        # Entrada
         self.entry.configure(bg=theme["entry_bg"], fg=theme["fg"], insertbackground=theme["fg"])
-        self.add_btn.configure(bg=theme["btn_add"], fg="white")
-        self.done_btn.configure(bg=theme["btn_done"], fg="white")
-        self.del_btn.configure(bg=theme["btn_del"], fg="white")
-        self.text.configure(bg=theme["text_bg"], fg=theme["text_fg"], selectbackground=theme["text_select"])
+
+        # Botones
+        self.add_btn.configure(bg=theme["btn_add"], fg="white", activebackground=theme["btn_add"])
+        self.done_btn.configure(bg=theme["btn_done"], fg="white", activebackground=theme["btn_done"])
+        self.del_btn.configure(bg=theme["btn_del"], fg="white", activebackground=theme["btn_del"])
+        self.theme_btn.configure(bg="#555555" if self.current_theme == "dark" else "#333333", fg="white")
+
+        # Text
+        self.text.configure(
+            bg=theme["text_bg"],
+            fg=theme["text_fg"],
+            selectbackground=theme["text_select"],
+            insertbackground=theme["text_fg"]
+        )
 
     def toggle_theme(self):
         self.current_theme = "dark" if self.current_theme == "light" else "light"
