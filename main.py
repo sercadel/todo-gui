@@ -4,6 +4,8 @@ from tkinter import messagebox, simpledialog
 import json
 import os
 from typing import List, Dict
+import sys
+import tempfile
 
 # --- DPI Awareness ---
 import ctypes
@@ -48,10 +50,11 @@ class TodoApp:
         self.root.title("To-Do App")
 
         # Icono (ruta absoluta + fallback)
-        icon_path = os.path.join(os.path.dirname(__file__), "app.ico")
+        icon_path = resource_path("app.ico")
         if os.path.exists(icon_path):
             try:
                 self.root.iconbitmap(icon_path)
+                self.root.update_idletasks()  # Forzar actualización
             except Exception as e:
                 print(f"Error cargando icono: {e}")
         else:
@@ -243,6 +246,16 @@ class TodoApp:
         self.text.tag_remove("sel", "1.0", "end")
         self.text.tag_add("sel", line_start, line_end)
         return "break"
+    
+    # --- ÍCONO EN .EXE (PyInstaller) ---
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and PyInstaller"""
+    try:
+        # PyInstaller crea carpeta temporal y almacena path en _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 # --- Ejecutar ---
 if __name__ == "__main__":
