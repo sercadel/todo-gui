@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.6%2B-blue?logo=python&logoColor=white)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Última versión](https://img.shields.io/github/v/release/sercadel/todo-gui?label=Versión&color=blue)](https://github.com/sercadel/todo-gui/releases/latest)
-[![Ejecutable](https://img.shields.io/badge/Download-exe-brightgreen)](https://github.com/sercadel/todo-gui/releases/latest/download/To-Do-App.exe)
+[![Ejecutable](https://img.shields.io/badge/Download-exe-brightgreen)](https://github.com/sercadel/todo-gui/releases/download/v1.0.0/To-Do-App-v1.0.0.exe)
 
 Una aplicación de gestión de tareas con GUI usando **tkinter**.
 
