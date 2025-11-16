@@ -103,11 +103,16 @@ class TodoApp:
             text_frame,
             font=("Consolas", 11),
             wrap="none",
-            state="disabled",
+            state="normal",  # ← PERMITE SELECCIÓN
             spacing1=2,
             spacing3=2
         )
         self.text.grid(row=0, column=0, sticky="nsew")
+
+        # BLOQUEAR EDICIÓN (solo lectura)
+        self.text.bind("<Key>", lambda e: "break")  # Bloquea teclado
+        self.text.bind("<Button-1>", self.on_text_click)  # Detecta clic
+        self.text.bind("<Double-1>", self.edit_task)
 
         v_scroll = tk.Scrollbar(text_frame, orient="vertical", command=self.text.yview)
         v_scroll.grid(row=0, column=1, sticky="ns")
@@ -116,8 +121,6 @@ class TodoApp:
         h_scroll = tk.Scrollbar(self.root, orient="horizontal", command=self.text.xview)
         h_scroll.grid(row=4, column=0, sticky="ew", padx=20, pady=(0, 5))
         self.text.configure(xscrollcommand=h_scroll.set)
-
-        self.text.bind("<Double-1>", self.edit_task)
 
         # Botones
         self.btn_frame = tk.Frame(self.root)
@@ -181,24 +184,27 @@ class TodoApp:
         self.refresh_list()
 
     def refresh_list(self):
-        self.text.configure(state="normal")
+        self.text.configure(state="normal")  # ← Siempre normal, permite selección
         self.text.delete("1.0", tk.END)
         for t in self.tasks:
-            status = "Done" if t["done"] else "Pending"
+            status = "✓" if t["done"] else "○"
             line = f"{status} {t['id']}. {t['description']}\n"
             start = self.text.index(tk.END)
             self.text.insert(tk.END, line)
             if t["done"]:
                 self.text.tag_add("done", start, self.text.index(tk.END))
         self.text.tag_config("done", foreground="#888888" if self.current_theme == "light" else "#bbbbbb")
-        self.text.configure(state="disabled")
         self.text.see("end")
 
     def get_selected_task_id(self):
         try:
-            line = self.text.get("current linestart", "current lineend")
+            if self.text.tag_ranges("sel"):
+                line = self.text.get("sel.first linestart", "sel.first lineend")
+            else:
+                # Fallback: línea bajo el cursor
+                line = self.text.get("insert linestart", "insert lineend")
             return int(line.split(".")[0].split()[-1])
-        except:
+        except Exception as e:
             messagebox.showwarning("Error", "Selecciona una tarea.")
             return None
 
@@ -228,6 +234,15 @@ class TodoApp:
                         save_tasks(self.tasks)
                         self.refresh_list()
                     break
+    
+    def on_text_click(self, event):
+        self.text.focus_set()
+        # Forzar selección de línea completa
+        line_start = self.text.index(f"@{event.x},{event.y} linestart")
+        line_end = self.text.index(f"@{event.x},{event.y} lineend")
+        self.text.tag_remove("sel", "1.0", "end")
+        self.text.tag_add("sel", line_start, line_end)
+        return "break"
 
 # --- Ejecutar ---
 if __name__ == "__main__":
