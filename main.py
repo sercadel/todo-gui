@@ -6,6 +6,8 @@ import os
 from typing import List, Dict
 import sys
 import tempfile
+import csv
+from datetime import datetime
 
 # --- DPI Awareness ---
 import ctypes
@@ -137,6 +139,10 @@ class TodoApp:
         self.del_btn = tk.Button(self.btn_frame, text="Eliminar", command=self.delete_task, width=12)
         self.del_btn.grid(row=0, column=1, padx=8, sticky="w")
 
+        # Botón Exportar
+        self.export_btn = tk.Button(self.btn_frame, text="Exportar CSV", command=self.export_to_csv, width=14)
+        self.export_btn.grid(row=0, column=2, padx=8, sticky="w")
+
         # Footer
         self.footer = tk.Label(self.root, text="Doble clic para editar", font=("Helvetica", 8))
         self.footer.grid(row=6, column=0, pady=10, sticky="ew")
@@ -161,6 +167,7 @@ class TodoApp:
         self.done_btn.configure(bg=theme["btn_done"], fg="white", activebackground=theme["btn_done"])
         self.del_btn.configure(bg=theme["btn_del"], fg="white", activebackground=theme["btn_del"])
         self.theme_btn.configure(bg="#555555" if self.current_theme == "dark" else "#333333", fg="white")
+        self.export_btn.configure(bg="#FF9800", fg="white", activebackground="#e68900")
 
         # Text
         self.text.configure(
@@ -247,6 +254,26 @@ class TodoApp:
         self.text.tag_add("sel", line_start, line_end)
         return "break"
     
+    def export_to_csv(self):
+        if not self.tasks:
+            messagebox.showinfo("Exportar", "No hay tareas para exportar.")
+            return
+
+        # Nombre de archivo con fecha/hora
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+        filename = f"tasks_export_{timestamp}.csv"
+
+        try:
+            with open(filename, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["ID", "Estado", "Descripción"])  # Cabecera
+                for t in self.tasks:
+                    status = "Completada" if t["done"] else "Pendiente"
+                    writer.writerow([t["id"], status, t["description"]])
+            messagebox.showinfo("Exportar CSV", f"Exportado correctamente:\n{filename}")
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo exportar:\n{e}")
+
     # --- ÍCONO EN .EXE (PyInstaller) ---
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and PyInstaller"""
@@ -256,6 +283,8 @@ def resource_path(relative_path):
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
+
+
 
 # --- Ejecutar ---
 if __name__ == "__main__":
